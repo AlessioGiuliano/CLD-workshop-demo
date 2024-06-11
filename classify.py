@@ -1,5 +1,4 @@
 import boto3
-import webcolors
 
 import argparse
 import os
