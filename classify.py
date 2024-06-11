@@ -1,6 +1,7 @@
 import boto3
 
 import argparse
+import json
 import os
 import shutil
 
@@ -36,6 +37,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--max_image_count",
         "-maxi",
+        type=int,
         help=f"The maximum amount of images to get in the folder. Default={default}",
         default=default
     )
@@ -153,11 +155,17 @@ if __name__ == "__main__":
 
     if not os.path.exists(OUTPUT_DIR):
         os.makedirs(OUTPUT_DIR)
+    
+    results_dir = os.path.join(OUTPUT_DIR, "requests-results")
+    os.makedirs(results_dir)
 
     for image_path in image_paths:
         response = run_rekognition(image_path, client, args.max_label_count, args.min_confidence)
         properties = response.get("ImageProperties")
         labels = response.get("Labels")
+        
+        with open(os.path.join(results_dir, f"{os.path.splitext(os.path.basename(image_path))[0]}.json"), "w") as file:
+            json.dump(response, file, indent=4)
         
         if not is_sharp(properties, args.min_sharpness):
             print(f"Image {image_path} is considered blurry, not classifying...")
@@ -182,4 +190,3 @@ if __name__ == "__main__":
                 label_category = get_label_category(label["Name"])
                 path = os.path.join(labels_dir, label_category, label["Name"])
                 make_category(path)
-            
